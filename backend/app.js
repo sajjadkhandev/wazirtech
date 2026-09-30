@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
@@ -12,6 +15,10 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, '../frontend/dist');
 
 const app = express();
 
@@ -64,6 +71,17 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/stats', statsRoutes);
+
+// Serve frontend static assets from dist
+app.use(express.static(distPath));
+
+// For SPA routing: serve index.html for all GET requests that aren't /api
+app.get('*', (req, res, next) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // Fallback & Error Handling
 app.use(notFound);
